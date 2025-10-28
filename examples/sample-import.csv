@@ -1,0 +1,12 @@
+field_name,field_type,description,required,options,conditional_parent,conditional_value
+"Full Name",textbox,"Enter your full name",yes,"","",""
+"Bio",textarea,"Tell us about yourself",no,"","",""
+"Country",selectbox,"Select your country",yes,"USA,Canada,UK,Australia,Other","",""
+"State",selectbox,"Select your state",no,"California,New York,Texas,Florida","Country","USA"
+"Province",selectbox,"Select your province",no,"Ontario,British Columbia,Quebec,Alberta","Country","Canada"
+"Age Range",radio,"Select your age range",yes,"18-25,26-35,36-45,46-55,56+","",""
+"Interests",multiselectbox,"Select your interests",no,"Sports,Music,Art,Technology,Travel,Reading","",""
+"Newsletter",checkbox,"Subscription preferences",no,"Weekly Newsletter,Monthly Updates,Special Offers","",""
+"Birth Date",datebox,"Your date of birth",no,"","",""
+"Website",url,"Your website URL",no,"","",""
+"Years of Experience",number,"Years in your field",no,"","Age Range","36-45"

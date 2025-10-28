@@ -1,0 +1,27 @@
+# Dependencies
+/vendor/
+
+# Composer
+composer.lock
+
+# WordPress
+wp-content/uploads/bp-xprofile-exports/
+
+# IDE
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.bak
+*.swp
+*~
+
+# Logs
+*.log
