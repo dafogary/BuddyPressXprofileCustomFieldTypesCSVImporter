@@ -8,7 +8,8 @@ echo "Plugin Structure Validation"
 echo "==================================="
 echo ""
 
-PLUGIN_DIR="/home/runner/work/BuddyPressXprofileCustomFieldTypesCSVImporter/BuddyPressXprofileCustomFieldTypesCSVImporter"
+# Get the directory where this script is located
+PLUGIN_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$PLUGIN_DIR"
 
 # Check main plugin file
@@ -97,4 +98,3 @@ echo "1. Run 'composer install' to install PHPSpreadsheet"
 echo "2. Copy plugin to WordPress plugins directory"
 echo "3. Activate required plugins (BuddyPress, etc.)"
 echo "4. Activate this plugin"
-echo ""
