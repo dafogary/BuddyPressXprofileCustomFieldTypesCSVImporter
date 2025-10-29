@@ -2,7 +2,7 @@
 
 **Version:** 0.1.0  
 **Author:** Your Name  
-**License:** AGPL-3.0-or-later  
+**License:** [AGPL-3.0-or-later](https://www.gnu.org/licenses/agpl-3.0.en.html)  
 **Requires at least:** WordPress 6.0  
 **Tested up to:** WordPress 6.7+  
 **Requires PHP:** 7.4+  
@@ -196,7 +196,7 @@ This project is open-source and released under the GNU Affero General Public Lic
 
 ## License
 
-BuddyPress XProfile Importer is released under the GNU Affero General Public License v3.0 or later (AGPL-3.0+)
+BuddyPress XProfile Importer is released under the [GNU Affero General Public License v3.0 or later (AGPL-3.0+)](https://www.gnu.org/licenses/agpl-3.0.en.html)
 
 > You are free to use, study, modify, and distribute this software - but if you deploy or distribute modified versions publicly,
 you must make the modified source code available under the same AGPL license.
