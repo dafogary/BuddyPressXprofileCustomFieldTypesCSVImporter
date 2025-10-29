@@ -1,7 +1,7 @@
 # BuddyPress XProfile Importer
 
 **Version:** 0.1.0  
-**Author:** Your Name  
+**Author:** Gary Foster - DAFO Creative LLC/Ltd, enhanced by AI  
 **License:** [AGPL-3.0-or-later](https://www.gnu.org/licenses/agpl-3.0.en.html)  
 **Requires at least:** WordPress 6.0  
 **Tested up to:** WordPress 6.7+  
