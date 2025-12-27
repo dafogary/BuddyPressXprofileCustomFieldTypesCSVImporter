@@ -1,0 +1,50 @@
+{
+    "name": "dafogary/buddypress-xprofile-importer",
+    "description": "Import and export BuddyPress XProfile fields using spreadsheet files",
+    "type": "wordpress-plugin",
+    "keywords": ["wordpress", "buddypress", "buddyboss", "xprofile", "importer", "csv", "excel"],
+    "homepage": "https://github.com/dafogary/BuddyPressXprofileCustomFieldTypesCSVImporter",
+    "license": "AGPL-3.0-or-later",
+    "authors": [
+        {
+            "name": "Gary Foster",
+            "email": "gary@dafocreative.com",
+            "homepage": "https://dafocreative.com",
+            "role": "Developer"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/dafogary/BuddyPressXprofileCustomFieldTypesCSVImporter/issues",
+        "source": "https://github.com/dafogary/BuddyPressXprofileCustomFieldTypesCSVImporter"
+    },
+    "require": {
+        "php": ">=7.4",
+        "ext-zip": "*",
+        "ext-xml": "*",
+        "ext-mbstring": "*"
+    },
+    "require-dev": {
+        "phpoffice/phpspreadsheet": "^1.29|^2.0"
+    },
+    "suggest": {
+        "phpoffice/phpspreadsheet": "Required for Excel (.xlsx, .xls) and OpenDocument (.ods) file support. CSV files work without this library."
+    },
+    "autoload": {
+        "files": [
+            "includes/helper.php"
+        ],
+        "classmap": [
+            "includes/",
+            "admin/"
+        ]
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true,
+        "allow-plugins": {
+            "composer/installers": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+}

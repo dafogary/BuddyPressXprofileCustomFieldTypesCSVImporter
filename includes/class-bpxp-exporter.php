@@ -3,17 +3,15 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use PhpOffice\PhpSpreadsheet\Spreadsheet;
-use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
-
 class BPXP_Exporter {
 
 	/**
 	 * Export fields for $group_id (int). Outputs spreadsheet directly.
 	 */
 	public function export_group( $group_id = 0 ) {
-		if ( ! function_exists( 'xprofile_get_field_groups' ) ) {
-			wp_die( __( 'BuddyPress not available', 'bp-xprofile-importer' ) );
+		$groups = bpxpi_get_field_groups();
+		if ( empty( $groups ) ) {
+			wp_die( __( 'BuddyPress/BuddyBoss XProfile not available or no field groups found', 'bp-xprofile-importer' ) );
 		}
 
 		$fields = $this->get_fields_by_group( $group_id );
@@ -22,16 +20,30 @@ class BPXP_Exporter {
 		$use_phpspreadsheet = class_exists( 'PhpOffice\PhpSpreadsheet\Spreadsheet' );
 
 		if ( $use_phpspreadsheet ) {
-			$spreadsheet = new Spreadsheet();
+			$spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
 			$sheet = $spreadsheet->getActiveSheet();
-			$header = [ 'Field Name', 'Type', 'Description', 'Is_Required', 'Options', 'Order', 'Group', 'Parent_Field', 'Show_If_Value' ];
+			$header = [ 'Field Name', 'Type', 'Description', 'Is_Required', 'Options', 'Order', 'Group', 'Can_Delete', 'Parent_Field', 'Show_If_Value' ];
 			$sheet->fromArray( $header, NULL, 'A1' );
 
 			$row = 2;
 			foreach ( $fields as $f ) {
 				$options = '';
 				if ( ! empty( $f->options ) && is_array( $f->options ) ) {
-					$options = implode( ',', $f->options );
+					// Handle both simple array and structured options with order
+					$option_texts = [];
+					foreach ( $f->options as $option ) {
+						if ( is_string( $option ) ) {
+							// Simple string option
+							$option_texts[] = $option;
+						} elseif ( is_array( $option ) && isset( $option['option_value'] ) ) {
+							// Structured option with possible order
+							$option_texts[] = $option['option_value'];
+						} elseif ( is_object( $option ) && isset( $option->name ) ) {
+							// BuddyPress option object
+							$option_texts[] = $option->name;
+						}
+					}
+					$options = implode( ',', $option_texts );
 				}
 				$parent_field = $this->get_conditional_parent_for_field( $f->id );
 				$show_if = $this->get_conditional_value_for_field( $f->id );
@@ -41,17 +53,18 @@ class BPXP_Exporter {
 				$sheet->setCellValue( 'C' . $row, $f->description );
 				$sheet->setCellValue( 'D' . $row, $f->is_required ? '1' : '0' );
 				$sheet->setCellValue( 'E' . $row, $options );
-				$sheet->setCellValue( 'F' . $row, isset( $f->sort_order ) ? intval( $f->sort_order ) : '' );
+				$sheet->setCellValue( 'F' . $row, isset( $f->field_order ) ? intval( $f->field_order ) : '' );
 				$sheet->setCellValue( 'G' . $row, $group_id );
-				$sheet->setCellValue( 'H' . $row, $parent_field );
-				$sheet->setCellValue( 'I' . $row, $show_if );
+				$sheet->setCellValue( 'H' . $row, isset( $f->can_delete ) ? ( $f->can_delete ? '1' : '0' ) : '1' );
+				$sheet->setCellValue( 'I' . $row, $parent_field );
+				$sheet->setCellValue( 'J' . $row, $show_if );
 				$row++;
 			}
 
 			$filename = 'bpxp-export-group-' . $group_id . '.xlsx';
 			header( 'Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' );
 			header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
-			$writer = new Xlsx( $spreadsheet );
+			$writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx( $spreadsheet );
 			$writer->save( 'php://output' );
 			exit;
 		}
@@ -61,12 +74,26 @@ class BPXP_Exporter {
 		header( 'Content-Type: text/csv; charset=utf-8' );
 		header( 'Content-Disposition: attachment; filename="' . $filename . '"' );
 		$out = fopen( 'php://output', 'w' );
-		fputcsv( $out, [ 'Field Name', 'Type', 'Description', 'Is_Required', 'Options', 'Order', 'Group', 'Parent_Field', 'Show_If_Value' ] );
+		fputcsv( $out, [ 'Field Name', 'Type', 'Description', 'Is_Required', 'Options', 'Order', 'Group', 'Can_Delete', 'Parent_Field', 'Show_If_Value' ] );
 
 		foreach ( $fields as $f ) {
 			$options = '';
 			if ( ! empty( $f->options ) && is_array( $f->options ) ) {
-				$options = implode( ',', $f->options );
+				// Handle both simple array and structured options with order
+				$option_texts = [];
+				foreach ( $f->options as $option ) {
+					if ( is_string( $option ) ) {
+						// Simple string option
+						$option_texts[] = $option;
+					} elseif ( is_array( $option ) && isset( $option['option_value'] ) ) {
+						// Structured option with possible order
+						$option_texts[] = $option['option_value'];
+					} elseif ( is_object( $option ) && isset( $option->name ) ) {
+						// BuddyPress option object
+						$option_texts[] = $option->name;
+					}
+				}
+				$options = implode( ',', $option_texts );
 			}
 			$parent_field = $this->get_conditional_parent_for_field( $f->id );
 			$show_if = $this->get_conditional_value_for_field( $f->id );
@@ -77,8 +104,9 @@ class BPXP_Exporter {
 				$f->description,
 				$f->is_required ? '1' : '0',
 				$options,
-				isset( $f->sort_order ) ? intval( $f->sort_order ) : '',
+				isset( $f->field_order ) ? intval( $f->field_order ) : '',
 				$group_id,
+				isset( $f->can_delete ) ? ( $f->can_delete ? '1' : '0' ) : '1',
 				$parent_field,
 				$show_if,
 			] );

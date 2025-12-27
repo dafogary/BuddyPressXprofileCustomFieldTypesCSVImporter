@@ -3,8 +3,6 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-use PhpOffice\PhpSpreadsheet\IOFactory;
-
 class BPXP_Importer {
 
 	protected $file;
@@ -32,7 +30,7 @@ class BPXP_Importer {
 
 	protected function parse_with_phpspreadsheet() {
 		try {
-			$spreadsheet = IOFactory::load( $this->file );
+			$spreadsheet = \PhpOffice\PhpSpreadsheet\IOFactory::load( $this->file );
 			$sheet = $spreadsheet->getActiveSheet();
 			$rows = $sheet->toArray(null, true, true, true);
 
@@ -86,14 +84,15 @@ class BPXP_Importer {
 	 *
 	 * Expected column names (case-insensitive):
 	 *  - field name, name
-	 *  - type
+	 *  - type (field type)
 	 *  - description
 	 *  - is_required (1/0 or yes/no)
 	 *  - options (comma separated - for selectbox, radio etc)
-	 *  - order (int)
+	 *  - order (int) - field display order
 	 *  - group (group id or name)
 	 *  - parent_field (field name or id) -- used for conditional plugin mapping later
 	 *  - show_if_value (value that triggers visibility)
+	 *  - can_delete (1/0) - whether field can be deleted by admins
 	 *
 	 * Returns array with results per row.
 	 */
@@ -121,6 +120,10 @@ class BPXP_Importer {
 			$options = isset( $row['options'] ) ? $row['options'] : '';
 			$order = isset( $row['order'] ) ? intval( $row['order'] ) : 0;
 			$group = isset( $row['group'] ) ? $row['group'] : $default_group_id;
+			$can_delete = isset( $row['can_delete'] ) ? filter_var( $row['can_delete'], FILTER_VALIDATE_BOOLEAN ) : true;
+
+			// Debug logging for order
+			bpxpi_log( "Processing field '{$name}': raw order = '" . ( isset( $row['order'] ) ? $row['order'] : 'not set' ) . "', parsed order = {$order}" );
 
 			// Resolve group id (string name -> id)
 			$group_id = $this->resolve_group_id( $group ) ?: $default_group_id;
@@ -131,19 +134,41 @@ class BPXP_Importer {
 			$field->description = sanitize_textarea_field( $description );
 			$field->type = sanitize_text_field( $type );
 			$field->is_required = $is_required ? 1 : 0;
+			$field->can_delete = $can_delete ? 1 : 0;
 			$field->order_by = 'custom';
-			if ( $order ) {
-				$field->sort_order = $order;
+			if ( isset( $row['order'] ) && $row['order'] !== '' ) {
+				$field->field_order = $order;
+				bpxpi_log( "Setting field_order = {$order} for field '{$name}'" );
+			} else {
+				bpxpi_log( "Not setting field_order for field '{$name}' (order value empty or not set)" );
 			}
 
 			// For selectable options, set the 'options' param (BuddyPress expects choices when saving values)
 			if ( ! empty( $options ) ) {
 				$field->data = [];
-				$field->options = array_map( 'trim', explode( ',', $options ) );
+				$options_array = array_map( 'trim', explode( ',', $options ) );
+				
+				// Create proper option structure with order
+				$field_options = [];
+				foreach ( $options_array as $index => $option_text ) {
+					if ( ! empty( $option_text ) ) {
+						$field_options[] = [
+							'option_value' => $option_text,
+							'option_order' => $index + 1, // Start from 1
+						];
+					}
+				}
+				
+				$field->options = $options_array; // For backward compatibility
+				$field->data = $field_options;    // Proper structure with order
+				
+				bpxpi_log( "Setting " . count( $field_options ) . " options for field '{$name}' with proper ordering" );
 			}
 
 			try {
 				$field_id = $field->save();
+
+				bpxpi_log( "Successfully created field '{$name}' with ID {$field_id}" );
 
 				$results[] = [
 					'status' => 'created',
@@ -176,12 +201,10 @@ class BPXP_Importer {
 		}
 
 		// Try to find group by name
-		if ( function_exists( 'xprofile_get_field_groups' ) ) {
-			$groups = xprofile_get_field_groups();
-			foreach ( $groups as $g ) {
-				if ( strtolower( $g->name ) === strtolower( $group ) ) {
-					return intval( $g->id );
-				}
+		$groups = bpxpi_get_field_groups();
+		foreach ( $groups as $g ) {
+			if ( strtolower( $g->name ) === strtolower( $group ) ) {
+				return intval( $g->id );
 			}
 		}
 

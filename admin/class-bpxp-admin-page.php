@@ -39,7 +39,13 @@ class BPXP_Admin_Page {
 			wp_die( __( 'Insufficient permissions', 'bp-xprofile-importer' ) );
 		}
 
-		$groups = function_exists( 'xprofile_get_field_groups' ) ? xprofile_get_field_groups() : [];
+		// Check compatibility and get groups
+		$groups = bpxpi_get_field_groups();
+		$compatibility_issue = false;
+		
+		if ( empty( $groups ) ) {
+			$compatibility_issue = true;
+		}
 
 		include BPXPI_PATH . 'admin/views/import-page.php';
 	}

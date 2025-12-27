@@ -11,6 +11,57 @@ $last_results = get_transient( 'bpxpi_last_results_' . get_current_user_id() );
 <div class="wrap">
 	<h1><?php esc_html_e( 'XProfile Import/Export', 'bp-xprofile-importer' ); ?></h1>
 
+	<?php if ( isset( $compatibility_issue ) && $compatibility_issue ): ?>
+		<div class="notice notice-error">
+			<p><strong><?php esc_html_e( 'BuddyPress/BuddyBoss Compatibility Issue', 'bp-xprofile-importer' ); ?></strong></p>
+			<p><?php esc_html_e( 'This plugin requires BuddyPress or BuddyBoss Platform with the Extended Profiles component enabled.', 'bp-xprofile-importer' ); ?></p>
+			
+			<?php 
+			$debug_info = bpxpi_debug_bp_status();
+			$has_bp_functions = $debug_info['xprofile_get_field_groups function exists'];
+			$has_bp_class = $debug_info['BP_XProfile_Group class exists'];
+			$has_table = $debug_info['xprofile groups table exists'];
+			?>
+			
+			<p><strong><?php esc_html_e( 'Diagnostic Information:', 'bp-xprofile-importer' ); ?></strong></p>
+			<ul style="list-style: disc; margin-left: 20px;">
+				<li>BuddyPress Functions Available: <?php echo $has_bp_functions ? '✅ Yes' : '❌ No'; ?></li>
+				<li>BuddyPress Classes Available: <?php echo $has_bp_class ? '✅ Yes' : '❌ No'; ?></li>
+				<li>XProfile Database Table Exists: <?php echo $has_table ? '✅ Yes' : '❌ No'; ?></li>
+				<li>BuddyPress Plugin Active: <?php echo $debug_info['buddypress plugin active'] ? '✅ Yes' : '❌ No'; ?></li>
+				<li>BuddyBoss Platform Active: <?php echo $debug_info['buddyboss platform active'] ? '✅ Yes' : '❌ No'; ?></li>
+				<?php if ( $has_table && isset( $debug_info['xprofile groups count in DB'] ) ): ?>
+				<li>XProfile Groups in Database: <?php echo intval( $debug_info['xprofile groups count in DB'] ); ?></li>
+				<?php endif; ?>
+			</ul>
+			
+			<p><strong><?php esc_html_e( 'To fix this:', 'bp-xprofile-importer' ); ?></strong></p>
+			<ol style="margin-left: 20px;">
+				<li><?php esc_html_e( 'Ensure BuddyPress or BuddyBoss Platform is installed and activated', 'bp-xprofile-importer' ); ?></li>
+				<li><?php esc_html_e( 'Go to BuddyPress/BuddyBoss → Components and enable "Extended Profiles"', 'bp-xprofile-importer' ); ?></li>
+				<li><?php esc_html_e( 'Refresh this page', 'bp-xprofile-importer' ); ?></li>
+			</ol>
+		</div>
+	<?php endif; ?>
+
+	<?php if ( WP_DEBUG ): ?>
+		<div class="notice notice-info">
+			<p><strong>Debug Info:</strong></p>
+			<pre><?php 
+				$debug_info = bpxpi_debug_bp_status();
+				foreach ( $debug_info as $key => $value ) {
+					echo esc_html( $key . ': ' . ( is_bool( $value ) ? ( $value ? 'true' : 'false' ) : $value ) ) . "\n";
+				}
+				echo 'Groups found: ' . count( $groups ) . "\n";
+				if ( ! empty( $groups ) ) {
+					foreach ( $groups as $g ) {
+						echo '- ' . esc_html( $g->name ) . ' (ID: ' . $g->id . ')' . "\n";
+					}
+				}
+			?></pre>
+		</div>
+	<?php endif; ?>
+
 	<?php if ( $msg === 'no_file' ) : ?>
 		<div class="notice notice-error"><p><?php esc_html_e( 'No file uploaded.', 'bp-xprofile-importer' ); ?></p></div>
 	<?php elseif ( $msg === 'upload_error' ) : ?>
@@ -18,6 +69,8 @@ $last_results = get_transient( 'bpxpi_last_results_' . get_current_user_id() );
 	<?php elseif ( $msg === 'import_done' ) : ?>
 		<div class="notice notice-success"><p><?php esc_html_e( 'Import completed. See results below.', 'bp-xprofile-importer' ); ?></p></div>
 	<?php endif; ?>
+
+	<?php if ( ! isset( $compatibility_issue ) || ! $compatibility_issue ): ?>
 
 	<form method="post" enctype="multipart/form-data" id="bpxpi-import-form">
 		<?php wp_nonce_field( 'bpxpi_import_action', 'bpxpi_import_nonce' ); ?>
@@ -28,7 +81,7 @@ $last_results = get_transient( 'bpxpi_last_results_' . get_current_user_id() );
 				<th scope="row"><label for="bpxpi_file"><?php esc_html_e( 'Spreadsheet file', 'bp-xprofile-importer' ); ?></label></th>
 				<td>
 					<input type="file" name="bpxpi_file" id="bpxpi_file" accept=".csv,.xls,.xlsx,.ods" required>
-					<p class="description"><?php esc_html_e( 'CSV/XLS/XLSX/ODS supported. Header row required. Example headers: Field Name, Type, Description, Is_Required, Options, Order, Group, Parent_Field, Show_If_Value', 'bp-xprofile-importer' ); ?></p>
+					<p class="description"><?php esc_html_e( 'CSV/XLS/XLSX/ODS supported. Header row required. Example headers: Field Name, Type, Description, Is_Required, Options, Order, Group, Can_Delete, Parent_Field, Show_If_Value', 'bp-xprofile-importer' ); ?></p>
 				</td>
 			</tr>
 
@@ -86,4 +139,7 @@ $last_results = get_transient( 'bpxpi_last_results_' . get_current_user_id() );
 			</tbody>
 		</table>
 	<?php endif; ?>
+
+	<?php endif; // End compatibility check ?>
+
 </div>
